@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solo Life System</title>
+
+  <meta name="theme-color" content="#11071b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Solo Life">
+
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -121,7 +131,10 @@
 
     .loading-title.glitch {
       animation: glitchFlicker 0.9s infinite;
-      text-shadow: 1px 0 rgba(180,120,255,0.8), -1px 0 rgba(120,220,255,0.35), 0 0 18px rgba(164, 105, 255, 0.45);
+      text-shadow:
+        1px 0 rgba(180,120,255,0.8),
+        -1px 0 rgba(120,220,255,0.35),
+        0 0 18px rgba(164, 105, 255, 0.45);
     }
 
     .loading-status {
@@ -580,18 +593,22 @@
 
     let data = loadData();
 
+    function cloneFallback(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
     function loadData() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) return structuredClone(defaultData);
+        if (!saved) return cloneFallback(defaultData);
         const parsed = JSON.parse(saved);
         return {
           xp: Number.isFinite(parsed.xp) ? parsed.xp : 0,
-          tasks: Array.isArray(parsed.tasks) ? parsed.tasks : structuredClone(defaultData.tasks),
-          money: Array.isArray(parsed.money) ? parsed.money : structuredClone(defaultData.money)
+          tasks: Array.isArray(parsed.tasks) ? parsed.tasks : cloneFallback(defaultData.tasks),
+          money: Array.isArray(parsed.money) ? parsed.money : cloneFallback(defaultData.money)
         };
       } catch {
-        return structuredClone(defaultData);
+        return cloneFallback(defaultData);
       }
     }
 
@@ -600,18 +617,23 @@
     }
 
     function formatMoney(value) {
-      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      return Number(value || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
     }
 
     function getLevelFromXp(xp) {
       let level = 1;
       let remaining = Math.max(0, xp);
       let need = 100;
+
       while (remaining >= need) {
         remaining -= need;
         level += 1;
         need += 25;
       }
+
       return { level, current: remaining, next: need };
     }
 
@@ -644,8 +666,12 @@
       const doneTasks = data.tasks.filter(task => task.status === 'concluida').length;
       const pendingTasks = data.tasks.filter(task => task.status === 'pendente').length;
       const failedTasks = data.tasks.filter(task => task.status === 'falhou').length;
-      const totalReceita = data.money.filter(item => item.type === 'receita').reduce((sum, item) => sum + Number(item.value || 0), 0);
-      const totalGasto = data.money.filter(item => item.type === 'gasto').reduce((sum, item) => sum + Number(item.value || 0), 0);
+      const totalReceita = data.money
+        .filter(item => item.type === 'receita')
+        .reduce((sum, item) => sum + Number(item.value || 0), 0);
+      const totalGasto = data.money
+        .filter(item => item.type === 'gasto')
+        .reduce((sum, item) => sum + Number(item.value || 0), 0);
       const balance = totalReceita - totalGasto;
       const xpPercent = Math.max(0, Math.min(100, (progression.current / progression.next) * 100));
 
@@ -678,13 +704,14 @@
 
       const taskList = document.getElementById('taskList');
       taskList.innerHTML = '';
+
       data.tasks.forEach(task => {
         const div = document.createElement('div');
         div.className = 'task-item';
         div.innerHTML = `
           <div class="task-item-top">
             <div>
-              <h4>${task.name}</h4>
+              <h4>${escapeHtml(task.name)}</h4>
               <div class="task-meta">+${task.xp} XP · -${task.penalty} XP · Status: ${task.status}</div>
             </div>
           </div>
@@ -699,13 +726,14 @@
 
       const moneyList = document.getElementById('moneyList');
       moneyList.innerHTML = '';
+
       data.money.forEach(item => {
         const div = document.createElement('div');
         div.className = 'money-item';
         div.innerHTML = `
           <div class="money-item-top">
             <div>
-              <h4>${item.name}</h4>
+              <h4>${escapeHtml(item.name)}</h4>
               <div class="money-meta">${item.type === 'receita' ? 'Receita' : 'Gasto'}</div>
             </div>
             <strong>${formatMoney(item.value)}</strong>
@@ -718,6 +746,15 @@
       });
 
       saveData();
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     function finishTask(id) {
@@ -751,8 +788,17 @@
       const name = document.getElementById('taskName').value.trim();
       const xp = Number(document.getElementById('taskXp').value);
       const penalty = Number(document.getElementById('taskPenalty').value);
+
       if (!name || !Number.isFinite(xp) || !Number.isFinite(penalty)) return;
-      data.tasks.unshift({ id: Date.now(), name, xp, penalty, status: 'pendente' });
+
+      data.tasks.unshift({
+        id: Date.now(),
+        name,
+        xp,
+        penalty,
+        status: 'pendente'
+      });
+
       this.reset();
       document.getElementById('taskXp').value = 20;
       document.getElementById('taskPenalty').value = 10;
@@ -764,8 +810,16 @@
       const name = document.getElementById('moneyName').value.trim();
       const value = Number(document.getElementById('moneyValue').value);
       const type = document.getElementById('moneyType').value;
+
       if (!name || !Number.isFinite(value)) return;
-      data.money.unshift({ id: Date.now(), name, value, type });
+
+      data.money.unshift({
+        id: Date.now(),
+        name,
+        value,
+        type
+      });
+
       this.reset();
       render();
     });
@@ -795,12 +849,14 @@
       for (const step of steps) {
         status.textContent = step.text;
         title.classList.toggle('glitch', step.target >= 79);
+
         while (current < step.target) {
           current++;
           bar.style.width = current + '%';
           percent.textContent = current + '%';
           await new Promise(resolve => setTimeout(resolve, current < 85 ? 35 : 50));
         }
+
         await new Promise(resolve => setTimeout(resolve, 350));
       }
 
