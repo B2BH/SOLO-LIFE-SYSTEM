@@ -1,227 +1,1345 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solo Life System</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solo Life System</title>
 
-<meta name="theme-color" content="#11071b">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-180.png">
+  <meta name="theme-color" content="#11071b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Solo Life">
 
-<style>
-body{
-background:#0a0215;
-color:white;
-font-family:Arial;
-margin:0;
-}
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
 
-.hidden{display:none;}
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-button{
-padding:10px;
-border:none;
-background:#6d28d9;
-color:white;
-border-radius:10px;
-}
+    :root {
+      --bg-1: #06020c;
+      --bg-2: #11071b;
+      --bg-3: #1a0c2b;
+      --card: rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.09);
+      --text: #f5edff;
+      --muted: #c8b8e8;
+      --purple-1: #6d28d9;
+      --purple-2: #9333ea;
+      --purple-3: #b26cff;
+      --green-1: #15803d;
+      --green-2: #22c55e;
+      --red-1: #991b1b;
+      --red-2: #ef4444;
+      --gray-btn: rgba(255,255,255,0.1);
+      --yellow-1: #a16207;
+      --yellow-2: #facc15;
+      --blue-1: #1d4ed8;
+      --blue-2: #38bdf8;
+    }
 
-input,select{
-padding:10px;
-margin:5px 0;
-width:100%;
-background:#111;
-color:white;
-border:1px solid #333;
-border-radius:10px;
-}
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(146, 51, 234, 0.18), transparent 35%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-.container{padding:20px;}
+    .hidden { display: none !important; }
 
-.task{background:#111;padding:10px;margin-top:10px;border-radius:10px;}
-</style>
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top, rgba(125, 60, 255, 0.22), transparent 35%),
+        linear-gradient(180deg, #050109 0%, #11061a 50%, #050109 100%);
+    }
+
+    .loading-screen.shake { animation: screenShake 0.45s linear; }
+
+    .loading-screen::before,
+    .loading-screen::after {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .loading-screen::before {
+      background: #7d3cff;
+      top: -120px;
+      right: -120px;
+    }
+
+    .loading-screen::after {
+      background: #9b5cff;
+      bottom: -140px;
+      left: -140px;
+    }
+
+    .loading-box {
+      position: relative;
+      width: min(92vw, 540px);
+      padding: 34px 26px;
+      border-radius: 26px;
+      border: 1px solid rgba(190, 150, 255, 0.22);
+      background: rgba(14, 7, 25, 0.84);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      text-align: center;
+      overflow: hidden;
+      animation: pulseGlow 2.5s ease-in-out infinite;
+    }
+
+    .particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -20px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(193, 139, 255, 0.9);
+      box-shadow: 0 0 10px rgba(170, 110, 255, 0.8);
+      animation: floatParticle linear infinite;
+    }
+
+    .loading-title {
+      position: relative;
+      font-size: 28px;
+      font-weight: 700;
+      color: #efe5ff;
+      letter-spacing: 0.04em;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .loading-title.glitch {
+      animation: glitchFlicker 0.9s infinite;
+      text-shadow:
+        1px 0 rgba(180,120,255,0.8),
+        -1px 0 rgba(120,220,255,0.35),
+        0 0 18px rgba(164, 105, 255, 0.45);
+    }
+
+    .loading-status {
+      font-size: 13px;
+      color: #d8c7fb;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .bar-wrap {
+      width: 100%;
+      height: 22px;
+      border-radius: 999px;
+      padding: 4px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .bar {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #7b2cff, #b26cff, #e0b7ff);
+      box-shadow: 0 0 20px rgba(154, 90, 255, 0.65);
+      transition: width 0.25s ease;
+      animation: barGlow 1.5s ease-in-out infinite alternate;
+    }
+
+    .percent {
+      margin-top: 14px;
+      color: #f1e9ff;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .welcome {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(130, 68, 255, 0.15);
+      border: 1px solid rgba(189, 143, 255, 0.22);
+      color: #f6efff;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: 0.5s ease;
+    }
+
+    .welcome.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .auth-box,
+    .rank-box,
+    .card,
+    .panel,
+    .task-item,
+    .money-item,
+    .notice-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .auth-box {
+      width: min(100%, 430px);
+      padding: 20px;
+    }
+
+    .auth-head {
+      margin-bottom: 16px;
+    }
+
+    .auth-head h1 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .auth-head p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .auth-tab {
+      flex: 1;
+    }
+
+    .auth-tab.active {
+      background: linear-gradient(90deg, var(--purple-1), var(--purple-2));
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .auth-message {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .auth-message.error {
+      display: block;
+      background: rgba(239,68,68,0.14);
+      color: #fecaca;
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+
+    .auth-message.success {
+      display: block;
+      background: rgba(34,197,94,0.14);
+      color: #bbf7d0;
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .rank-box {
+      padding: 16px 18px;
+      min-width: 280px;
+    }
+
+    .user-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .user-line small {
+      color: #d9caf7;
+    }
+
+    .rank-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #d7c8f6;
+    }
+
+    .xp-track {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .xp-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6c22ff, #a855f7);
+    }
+
+    .xp-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #cdbcf0;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .nav-button {
+      width: auto;
+      white-space: nowrap;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #dfd2fb;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+    }
+
+    .nav-button.active {
+      background: linear-gradient(90deg, var(--purple-1), var(--purple-2));
+      color: white;
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.28);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .card,
+    .panel,
+    .notice-box {
+      padding: 18px;
+    }
+
+    .card small,
+    .panel small {
+      color: #b9aad8;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .card strong {
+      font-size: 28px;
+      display: block;
+    }
+
+    .section-title {
+      margin-bottom: 14px;
+      font-size: 20px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .task-form,
+    .money-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(10,10,18,0.85);
+      color: white;
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--purple-1), var(--purple-2));
+      border: none;
+      font-weight: 700;
+    }
+
+    .task-list,
+    .money-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .task-item,
+    .money-item {
+      padding: 14px;
+      border-radius: 16px;
+    }
+
+    .task-item-top,
+    .money-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .task-item h4,
+    .money-item h4 {
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    .task-meta,
+    .money-meta,
+    .notice-text {
+      color: #b8a8d8;
+      font-size: 13px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #efe5ff;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .actions button,
+    .small-btn {
+      width: auto;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .green { background: linear-gradient(90deg, var(--green-1), var(--green-2)); }
+    .red { background: linear-gradient(90deg, var(--red-1), var(--red-2)); }
+    .gray { background: var(--gray-btn); }
+    .yellow { background: linear-gradient(90deg, var(--yellow-1), var(--yellow-2)); color: #1a1100; }
+    .blue { background: linear-gradient(90deg, var(--blue-1), var(--blue-2)); }
+
+    .notice-box {
+      margin-bottom: 18px;
+      background: rgba(250, 204, 21, 0.09);
+      border: 1px solid rgba(250, 204, 21, 0.16);
+    }
+
+    .notice-box h3 {
+      margin-bottom: 8px;
+      color: #fde68a;
+      font-size: 16px;
+    }
+
+    .view-hidden { display: none; }
+
+    @keyframes floatParticle {
+      0% { transform: translateY(0) scale(0.8); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: translateY(-120vh) scale(1.25); opacity: 0; }
+    }
+
+    @keyframes glitchFlicker {
+      0%, 100% { transform: translate(0, 0); opacity: 1; }
+      10% { transform: translate(-1px, 0); }
+      20% { transform: translate(1px, 0); }
+      30% { transform: translate(-2px, 1px); }
+      40% { transform: translate(2px, -1px); }
+      50% { transform: translate(0, 0); opacity: 0.92; }
+      60% { transform: translate(-1px, 1px); }
+      70% { transform: translate(1px, -1px); }
+      80% { transform: translate(0, 0); opacity: 1; }
+    }
+
+    @keyframes screenShake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-3px, 1px); }
+      40% { transform: translate(3px, -1px); }
+      60% { transform: translate(-2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 20px rgba(140,80,255,0.2); }
+      50% { box-shadow: 0 0 40px rgba(160,100,255,0.5); }
+      100% { box-shadow: 0 0 20px rgba(140,80,255,0.2); }
+    }
+
+    @keyframes barGlow {
+      0% { filter: brightness(1); }
+      100% { filter: brightness(1.4); }
+    }
+
+    @media (max-width: 860px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .loading-title { font-size: 24px; }
+      .topbar { margin-bottom: 18px; }
+      .rank-box { width: 100%; min-width: unset; }
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .card strong { font-size: 24px; }
+    }
+  </style>
 </head>
-
 <body>
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-box">
+      <div class="particles" aria-hidden="true">
+        <span class="particle" style="left:8%;animation-duration:5.2s;animation-delay:0s"></span>
+        <span class="particle" style="left:16%;animation-duration:6.5s;animation-delay:1.1s"></span>
+        <span class="particle" style="left:27%;animation-duration:4.8s;animation-delay:0.6s"></span>
+        <span class="particle" style="left:39%;animation-duration:6.9s;animation-delay:1.8s"></span>
+        <span class="particle" style="left:52%;animation-duration:5.7s;animation-delay:0.9s"></span>
+        <span class="particle" style="left:64%;animation-duration:7.1s;animation-delay:1.5s"></span>
+        <span class="particle" style="left:76%;animation-duration:5.1s;animation-delay:0.3s"></span>
+        <span class="particle" style="left:88%;animation-duration:6.2s;animation-delay:2s"></span>
+      </div>
+      <div id="loadingTitle" class="loading-title">SOLO LIFE SYSTEM</div>
+      <div id="loadingStatus" class="loading-status">Sincronizando sistema...</div>
+      <div class="bar-wrap">
+        <div id="loadingBar" class="bar"></div>
+      </div>
+      <div id="loadingPercent" class="percent">0%</div>
+      <div id="welcomeMessage" class="welcome">Bem-vindo, jogador.</div>
+    </div>
+  </div>
 
-<div id="auth" class="container">
-<h2>Login</h2>
-<input id="email" placeholder="email">
-<input id="password" type="password" placeholder="senha">
-<button onclick="login()">Entrar</button>
-<button onclick="register()">Criar Conta</button>
-</div>
+  <div id="authScreen" class="auth-wrap hidden">
+    <div class="auth-box">
+      <div class="auth-head">
+        <h1>Solo Life</h1>
+        <p>Entre na sua conta para acessar seu sistema pessoal.</p>
+      </div>
 
-<div id="app" class="hidden container">
+      <div class="auth-tabs">
+        <button id="tabLogin" class="auth-tab active" type="button">Login</button>
+        <button id="tabRegister" class="auth-tab" type="button">Cadastro</button>
+      </div>
 
-<h2 id="user"></h2>
+      <form id="loginForm" class="auth-form">
+        <input id="loginEmail" type="email" placeholder="Seu e-mail" required>
+        <input id="loginPassword" type="password" placeholder="Sua senha" required>
+        <button type="submit">Entrar</button>
+      </form>
 
-<button onclick="logout()">Sair</button>
+      <form id="registerForm" class="auth-form hidden">
+        <input id="registerEmail" type="email" placeholder="Seu e-mail" required>
+        <input id="registerPassword" type="password" placeholder="Crie uma senha" required>
+        <button type="submit">Criar conta</button>
+      </form>
 
-<h3>XP: <span id="xp">0</span></h3>
+      <div id="authMessage" class="auth-message"></div>
+    </div>
+  </div>
 
-<h3>Nova tarefa</h3>
-<input id="name" placeholder="nome">
-<input id="xpGain" placeholder="xp ganho">
-<input id="xpLoss" placeholder="xp perdido">
+  <div id="app" class="app hidden">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Solo Life</h1>
+        <p>Seu sistema pessoal de evolução</p>
+      </div>
 
-<select id="type">
-<option value="daily">Diária</option>
-<option value="once">Avulsa</option>
-</select>
+      <div class="rank-box">
+        <div class="user-line">
+          <small id="userEmailText">Usuário</small>
+          <button id="logoutBtn" class="small-btn gray" type="button">Sair</button>
+        </div>
 
-<button onclick="addTask()">Adicionar</button>
+        <div class="rank-line">
+          <span id="rankText">Rank Ferro</span>
+          <span id="levelText">Nível 1</span>
+        </div>
 
-<div id="tasks"></div>
+        <div class="xp-track">
+          <div id="xpFill" class="xp-fill"></div>
+        </div>
 
-</div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+        <div id="xpText" class="xp-text">0 / 100 XP</div>
+      </div>
+    </div>
 
-<script>
+    <div id="dailyNotice" class="notice-box hidden">
+      <h3>Relatório diário</h3>
+      <div id="dailyNoticeText" class="notice-text"></div>
+    </div>
 
-const firebaseConfig = {
-apiKey: "AIzaSyBWjvpKc5UzAsJSIjTczC0ZQTu0h8EWiRU",
-authDomain: "solo-life-system-c370d.firebaseapp.com",
-projectId: "solo-life-system-c370d",
-storageBucket: "solo-life-system-c370d.appspot.com",
-messagingSenderId: "834688060904",
-appId: "1:834688060904:web:695984d69d24af7cca285d"
-};
+    <div class="nav-buttons">
+      <button id="btnInicio" class="nav-button active" type="button">Início</button>
+      <button id="btnRotina" class="nav-button" type="button">Rotina + XP</button>
+      <button id="btnFinanceiro" class="nav-button" type="button">Financeiro</button>
+    </div>
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+    <div id="viewInicio">
+      <div class="grid">
+        <div class="card"><small>XP Total</small><strong id="homeXp">0</strong></div>
+        <div class="card"><small>Rank Atual</small><strong id="homeRank">Ferro</strong></div>
+        <div class="card"><small>Gastos Previstos</small><strong id="homeGastos">R$ 0,00</strong></div>
+        <div class="card"><small>Salário</small><strong id="homeSalario">R$ 0,00</strong></div>
+      </div>
 
-let user;
-let data = {xp:0,tasks:[],lastReset:null};
+      <div class="panel">
+        <h2 class="section-title">Resumo geral</h2>
+        <div class="grid" style="margin-bottom:0">
+          <div class="card"><small>Nível</small><strong id="homeNivel">1</strong></div>
+          <div class="card"><small>Concluídas hoje</small><strong id="homeDone">0</strong></div>
+          <div class="card"><small>Pendentes hoje</small><strong id="homePending">0</strong></div>
+          <div class="card"><small>Saldo Atual</small><strong id="homeBalance">R$ 0,00</strong></div>
+        </div>
+      </div>
+    </div>
 
-auth.onAuthStateChanged(async u=>{
-if(u){
-user=u;
-document.getElementById("auth").classList.add("hidden");
-document.getElementById("app").classList.remove("hidden");
-document.getElementById("user").innerText=u.email;
+    <div id="viewRotina" class="view-hidden">
+      <div class="main-grid">
+        <div class="panel">
+          <h2 class="section-title">Nova tarefa</h2>
 
-await loadData();
-dailyReset();
-render();
-}else{
-document.getElementById("auth").classList.remove("hidden");
-document.getElementById("app").classList.add("hidden");
-}
-});
+          <form id="taskForm" class="task-form">
+            <input id="taskName" type="text" placeholder="Nome da tarefa" required>
+            <input id="taskXp" type="number" min="1" placeholder="XP ganho" value="20" required>
+            <input id="taskPenalty" type="number" min="0" placeholder="XP perdido" value="10" required>
 
-async function register(){
-await auth.createUserWithEmailAndPassword(
-email.value,password.value);
-}
+            <select id="taskType">
+              <option value="daily">Diária</option>
+              <option value="once">Avulsa</option>
+            </select>
 
-async function login(){
-await auth.signInWithEmailAndPassword(
-email.value,password.value);
-}
+            <button type="submit">Adicionar tarefa</button>
+          </form>
 
-function logout(){
-auth.signOut();
-}
+          <div id="taskList" class="task-list"></div>
+        </div>
 
-async function loadData(){
-const ref=db.collection("users").doc(user.uid);
-const doc=await ref.get();
+        <div>
+          <div class="panel" style="margin-bottom:18px">
+            <h2 class="section-title">XP e progresso</h2>
 
-if(!doc.exists){
-await ref.set(data);
-}else{
-data=doc.data();
-}
-}
+            <div class="grid" style="margin-bottom:18px">
+              <div class="card"><small>XP Total</small><strong id="rotinaXp">0</strong></div>
+              <div class="card"><small>Concluídas hoje</small><strong id="rotinaDone">0</strong></div>
+              <div class="card"><small>Pendentes hoje</small><strong id="rotinaPending">0</strong></div>
+              <div class="card"><small>Falhou hoje</small><strong id="rotinaFailed">0</strong></div>
+            </div>
 
-async function save(){
-await db.collection("users").doc(user.uid).set(data);
-}
+            <div class="rank-box" style="min-width:unset;width:100%">
+              <div class="rank-line">
+                <span id="rotinaRank">Rank Ferro</span>
+                <span id="rotinaLevel">Nível 1</span>
+              </div>
+              <div class="xp-track">
+                <div id="rotinaXpFill" class="xp-fill"></div>
+              </div>
+              <div id="rotinaXpText" class="xp-text">0 / 100 XP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-function addTask(){
-data.tasks.push({
-id:Date.now(),
-name:name.value,
-xpGain:Number(xpGain.value),
-xpLoss:Number(xpLoss.value),
-type:type.value,
-status:"pending",
-lastDone:null
-});
-save();
-render();
-}
-  function today(){
-return new Date().toDateString();
-}
+    <div id="viewFinanceiro" class="view-hidden">
+      <div class="panel" style="margin-bottom:18px">
+        <h2 class="section-title">Resumo financeiro</h2>
+        <div class="grid" style="margin-bottom:0">
+          <div class="card"><small>Receitas</small><strong id="finReceitas">R$ 0,00</strong></div>
+          <div class="card"><small>Gastos</small><strong id="finGastos">R$ 0,00</strong></div>
+          <div class="card"><small>Saldo Atual</small><strong id="finSaldo">R$ 0,00</strong></div>
+        </div>
+      </div>
 
-function dailyReset(){
-const t=today();
+      <div class="panel">
+        <h2 class="section-title">Financeiro</h2>
 
-if(data.lastReset===t)return;
+        <form id="moneyForm" class="money-form">
+          <input id="moneyName" type="text" placeholder="Nome do lançamento" required>
+          <input id="moneyValue" type="number" placeholder="Valor" required>
 
-data.tasks.forEach(task=>{
-if(task.type==="daily"){
+          <select id="moneyType">
+            <option value="gasto">Gasto</option>
+            <option value="receita">Receita</option>
+          </select>
 
-if(task.status==="pending"){
-data.xp=Math.max(0,data.xp-task.xpLoss);
-}
+          <button type="submit">Adicionar lançamento</button>
+        </form>
 
-task.status="pending";
-task.lastDone=null;
+        <div id="moneyList" class="money-list"></div>
+      </div>
+    </div>
+  </div>
 
-}
-});
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-data.lastReset=t;
-save();
-}
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBWjvpKc5UzAsJSIjTczC0ZQTu0h8EWiRU",
+      authDomain: "solo-life-system-c370d.firebaseapp.com",
+      projectId: "solo-life-system-c370d",
+      storageBucket: "solo-life-system-c370d.appspot.com",
+      messagingSenderId: "834688060904",
+      appId: "1:834688060904:web:695984d69d24af7cca285d",
+      measurementId: "G-86ZXESML7E"
+    };
 
-function complete(id){
-const task=data.tasks.find(t=>t.id===id);
-if(task.status==="done")return;
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-task.status="done";
-task.lastDone=today();
-data.xp+=task.xpGain;
+    const defaultUserData = {
+      xp: 0,
+      tasks: [],
+      money: [],
+      meta: {
+        lastDailyProcessDate: null
+      }
+    };
 
-save();
-render();
-}
+    let currentUser = null;
+    let data = cloneData(defaultUserData);
+    let dailyNoticeText = "";
 
-function fail(id){
-const task=data.tasks.find(t=>t.id===id);
-task.status="failed";
-data.xp=Math.max(0,data.xp-task.xpLoss);
+    function cloneData(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
 
-save();
-render();
-}
+    function normalizeUserData(saved) {
+      return {
+        xp: Number.isFinite(saved?.xp) ? saved.xp : 0,
+        tasks: Array.isArray(saved?.tasks) ? saved.tasks : [],
+        money: Array.isArray(saved?.money) ? saved.money : [],
+        meta: {
+          lastDailyProcessDate: saved?.meta?.lastDailyProcessDate || null
+        }
+      };
+    }
 
-function render(){
-xp.innerText=data.xp;
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
+    }
 
-tasks.innerHTML="";
+    function getTodayKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
 
-data.tasks.forEach(t=>{
-tasks.innerHTML+=`
-<div class="task">
-<b>${t.name}</b><br>
-Tipo: ${t.type}<br>
-Status: ${t.status}<br>
+    function parseDateKey(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
 
-<button onclick="complete(${t.id})">Concluir</button>
-<button onclick="fail(${t.id})">Falhar</button>
-</div>
-`;
-});
-}
+    function dateToKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
 
-</script>
+    function addDays(date, amount) {
+      const copy = new Date(date);
+      copy.setDate(copy.getDate() + amount);
+      return copy;
+    }
+
+    function isDateAfter(a, b) {
+      return parseDateKey(a).getTime() > parseDateKey(b).getTime();
+    }
+
+    function getLevelFromXp(xp) {
+      let level = 1;
+      let remaining = Math.max(0, xp);
+      let need = 100;
+
+      while (remaining >= need) {
+        remaining -= need;
+        level += 1;
+        need += 25;
+      }
+
+      return { level, current: remaining, next: need };
+    }
+
+    function getRank(level) {
+      if (level >= 50) return "Desafiante";
+      if (level >= 40) return "Grão-Mestre";
+      if (level >= 35) return "Mestre";
+      if (level >= 30) return "Diamante";
+      if (level >= 25) return "Esmeralda";
+      if (level >= 20) return "Platina";
+      if (level >= 15) return "Ouro";
+      if (level >= 10) return "Prata";
+      if (level >= 5) return "Bronze";
+      return "Ferro";
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showAuthMessage(message, type = "error") {
+      const el = document.getElementById("authMessage");
+      el.className = `auth-message ${type}`;
+      el.textContent = message;
+    }
+
+    function clearAuthMessage() {
+      const el = document.getElementById("authMessage");
+      el.className = "auth-message";
+      el.textContent = "";
+    }
+
+    async function loadUserData(uid) {
+      const ref = db.collection("users").doc(uid);
+      const snap = await ref.get();
+
+      if (!snap.exists) {
+        data = cloneData(defaultUserData);
+        data.meta.lastDailyProcessDate = getTodayKey();
+        await ref.set(data);
+      } else {
+        data = normalizeUserData(snap.data());
+      }
+    }
+
+    async function saveUserData() {
+      if (!currentUser) return;
+      await db.collection("users").doc(currentUser.uid).set(data, { merge: true });
+    }
+
+    function ensureTaskShape(task) {
+      if (!Array.isArray(task.completedDates)) task.completedDates = [];
+      if (!Array.isArray(task.failedDates)) task.failedDates = [];
+      if (!task.createdDate) task.createdDate = getTodayKey();
+      if (!task.type) task.type = "once";
+      if (!task.status) task.status = "pending";
+      if (!Number.isFinite(task.xpGain)) task.xpGain = 0;
+      if (!Number.isFinite(task.xpLoss)) task.xpLoss = 0;
+    }
+
+    async function processDailyTasks() {
+      const today = getTodayKey();
+      dailyNoticeText = "";
+
+      data.tasks.forEach(ensureTaskShape);
+
+      if (!data.meta.lastDailyProcessDate) {
+        data.meta.lastDailyProcessDate = today;
+        await saveUserData();
+        return;
+      }
+
+      if (data.meta.lastDailyProcessDate === today) return;
+
+      const messages = [];
+      let totalLoss = 0;
+
+      let current = parseDateKey(data.meta.lastDailyProcessDate);
+
+      while (dateToKey(current) < today) {
+        const processDate = dateToKey(current);
+
+        data.tasks.forEach(task => {
+          if (task.type !== "daily") return;
+          if (isDateAfter(task.createdDate, processDate)) return;
+
+          const completed = task.completedDates.includes(processDate);
+          const failed = task.failedDates.includes(processDate);
+
+          if (!completed && !failed) {
+            task.failedDates.push(processDate);
+            data.xp = Math.max(0, data.xp - Number(task.xpLoss || 0));
+            totalLoss += Number(task.xpLoss || 0);
+            messages.push(`${task.name} falhou em ${processDate} (-${task.xpLoss} XP)`);
+          }
+        });
+
+        current = addDays(current, 1);
+      }
+
+      data.meta.lastDailyProcessDate = today;
+
+      if (messages.length) {
+        dailyNoticeText = messages.join(" • ");
+      }
+
+      await saveUserData();
+    }
+
+    function getTaskStatusForToday(task) {
+      const today = getTodayKey();
+      ensureTaskShape(task);
+
+      if (task.type === "daily") {
+        if (task.completedDates.includes(today)) return "done";
+        if (task.failedDates.includes(today)) return "failed";
+        return "pending";
+      }
+
+      return task.status || "pending";
+    }
+
+    function switchView(view) {
+      document.getElementById("viewInicio").classList.toggle("view-hidden", view !== "inicio");
+      document.getElementById("viewRotina").classList.toggle("view-hidden", view !== "rotina");
+      document.getElementById("viewFinanceiro").classList.toggle("view-hidden", view !== "financeiro");
+
+      document.getElementById("btnInicio").classList.toggle("active", view === "inicio");
+      document.getElementById("btnRotina").classList.toggle("active", view === "rotina");
+      document.getElementById("btnFinanceiro").classList.toggle("active", view === "financeiro");
+    }
+
+    function renderDailyNotice() {
+      const box = document.getElementById("dailyNotice");
+      const text = document.getElementById("dailyNoticeText");
+
+      if (dailyNoticeText) {
+        text.textContent = dailyNoticeText;
+        box.classList.remove("hidden");
+      } else {
+        text.textContent = "";
+        box.classList.add("hidden");
+      }
+    }
+
+    function render() {
+      const progression = getLevelFromXp(data.xp);
+      const rank = getRank(progression.level);
+
+      const doneTasks = data.tasks.filter(task => getTaskStatusForToday(task) === "done").length;
+      const pendingTasks = data.tasks.filter(task => getTaskStatusForToday(task) === "pending").length;
+      const failedTasks = data.tasks.filter(task => getTaskStatusForToday(task) === "failed").length;
+
+      const totalReceita = data.money
+        .filter(item => item.type === "receita")
+        .reduce((sum, item) => sum + Number(item.value || 0), 0);
+
+      const totalGasto = data.money
+        .filter(item => item.type === "gasto")
+        .reduce((sum, item) => sum + Number(item.value || 0), 0);
+
+      const balance = totalReceita - totalGasto;
+      const xpPercent = Math.max(0, Math.min(100, (progression.current / progression.next) * 100));
+
+      document.getElementById("userEmailText").textContent = currentUser?.email || "Usuário";
+
+      document.getElementById("rankText").textContent = `Rank ${rank}`;
+      document.getElementById("levelText").textContent = `Nível ${progression.level}`;
+      document.getElementById("xpText").textContent = `${progression.current} / ${progression.next} XP`;
+      document.getElementById("xpFill").style.width = `${xpPercent}%`;
+
+      document.getElementById("homeXp").textContent = data.xp;
+      document.getElementById("homeRank").textContent = rank;
+      document.getElementById("homeGastos").textContent = formatMoney(totalGasto);
+      document.getElementById("homeSalario").textContent = formatMoney(totalReceita);
+      document.getElementById("homeNivel").textContent = progression.level;
+      document.getElementById("homeDone").textContent = doneTasks;
+      document.getElementById("homePending").textContent = pendingTasks;
+      document.getElementById("homeBalance").textContent = formatMoney(balance);
+
+      document.getElementById("rotinaXp").textContent = data.xp;
+      document.getElementById("rotinaDone").textContent = doneTasks;
+      document.getElementById("rotinaPending").textContent = pendingTasks;
+      document.getElementById("rotinaFailed").textContent = failedTasks;
+      document.getElementById("rotinaRank").textContent = `Rank ${rank}`;
+      document.getElementById("rotinaLevel").textContent = `Nível ${progression.level}`;
+      document.getElementById("rotinaXpText").textContent = `${progression.current} / ${progression.next} XP`;
+      document.getElementById("rotinaXpFill").style.width = `${xpPercent}%`;
+
+      document.getElementById("finReceitas").textContent = formatMoney(totalReceita);
+      document.getElementById("finGastos").textContent = formatMoney(totalGasto);
+      document.getElementById("finSaldo").textContent = formatMoney(balance);
+
+      renderDailyNotice();
+
+      const taskList = document.getElementById("taskList");
+      taskList.innerHTML = "";
+
+      data.tasks.forEach(task => {
+        ensureTaskShape(task);
+        const todayStatus = getTaskStatusForToday(task);
+
+        const statusLabel =
+          todayStatus === "done" ? "Concluída hoje" :
+          todayStatus === "failed" ? "Falhou hoje" :
+          "Pendente hoje";
+
+        const typeLabel = task.type === "daily" ? "Diária" : "Avulsa";
+
+        const statusColor =
+          todayStatus === "done" ? "green" :
+          todayStatus === "failed" ? "red" : "blue";
+
+        const div = document.createElement("div");
+        div.className = "task-item";
+        div.innerHTML = `
+          <div class="task-item-top">
+            <div>
+              <h4>${escapeHtml(task.name)}</h4>
+              <div class="task-meta">+${task.xpGain} XP · -${task.xpLoss} XP</div>
+              <div class="badge-row">
+                <span class="badge">${typeLabel}</span>
+                <span class="badge">${statusLabel}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="green" onclick="completeTask(${task.id})">Concluir</button>
+            <button class="${statusColor === "red" ? "red" : "yellow"}" onclick="failTask(${task.id})">Falhar</button>
+            <button class="gray" onclick="removeTask(${task.id})">Excluir</button>
+          </div>
+        `;
+        taskList.appendChild(div);
+      });
+
+      const moneyList = document.getElementById("moneyList");
+      moneyList.innerHTML = "";
+
+      data.money.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "money-item";
+        div.innerHTML = `
+          <div class="money-item-top">
+            <div>
+              <h4>${escapeHtml(item.name)}</h4>
+              <div class="money-meta">${item.type === "receita" ? "Receita" : "Gasto"}</div>
+            </div>
+            <strong>${formatMoney(item.value)}</strong>
+          </div>
+          <div class="actions">
+            <button class="gray" onclick="removeMoney(${item.id})">Excluir</button>
+          </div>
+        `;
+        moneyList.appendChild(div);
+      });
+    }
+
+    async function completeTask(id) {
+      const today = getTodayKey();
+      const task = data.tasks.find(item => item.id === id);
+      if (!task) return;
+
+      ensureTaskShape(task);
+
+      if (task.type === "daily") {
+        if (task.completedDates.includes(today)) return;
+        if (task.failedDates.includes(today)) return;
+
+        task.completedDates.push(today);
+        data.xp += Number(task.xpGain || 0);
+      } else {
+        if (task.status === "done") return;
+        task.status = "done";
+        data.xp += Number(task.xpGain || 0);
+      }
+
+      render();
+      await saveUserData();
+    }
+
+    async function failTask(id) {
+      const today = getTodayKey();
+      const task = data.tasks.find(item => item.id === id);
+      if (!task) return;
+
+      ensureTaskShape(task);
+
+      if (task.type === "daily") {
+        if (task.completedDates.includes(today)) return;
+        if (task.failedDates.includes(today)) return;
+
+        task.failedDates.push(today);
+        data.xp = Math.max(0, data.xp - Number(task.xpLoss || 0));
+      } else {
+        if (task.status === "failed") return;
+        if (task.status === "done") return;
+
+        task.status = "failed";
+        data.xp = Math.max(0, data.xp - Number(task.xpLoss || 0));
+      }
+
+      render();
+      await saveUserData();
+    }
+
+    async function removeTask(id) {
+      data.tasks = data.tasks.filter(task => task.id !== id);
+      render();
+      await saveUserData();
+    }
+
+    async function removeMoney(id) {
+      data.money = data.money.filter(item => item.id !== id);
+      render();
+      await saveUserData();
+    }
+
+    document.getElementById("taskForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById("taskName").value.trim();
+      const xpGain = Number(document.getElementById("taskXp").value);
+      const xpLoss = Number(document.getElementById("taskPenalty").value);
+      const type = document.getElementById("taskType").value;
+
+      if (!name || !Number.isFinite(xpGain) || !Number.isFinite(xpLoss)) return;
+
+      data.tasks.unshift({
+        id: Date.now(),
+        name,
+        xpGain,
+        xpLoss,
+        type,
+        status: "pending",
+        createdDate: getTodayKey(),
+        completedDates: [],
+        failedDates: []
+      });
+
+      this.reset();
+      document.getElementById("taskXp").value = 20;
+      document.getElementById("taskPenalty").value = 10;
+      document.getElementById("taskType").value = "daily";
+
+      render();
+      await saveUserData();
+    });
+
+    document.getElementById("moneyForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById("moneyName").value.trim();
+      const value = Number(document.getElementById("moneyValue").value);
+      const type = document.getElementById("moneyType").value;
+
+      if (!name || !Number.isFinite(value)) return;
+
+      data.money.unshift({
+        id: Date.now(),
+        name,
+        value,
+        type
+      });
+
+      this.reset();
+
+      render();
+      await saveUserData();
+    });
+
+    document.getElementById("btnInicio").addEventListener("click", () => switchView("inicio"));
+    document.getElementById("btnRotina").addEventListener("click", () => switchView("rotina"));
+    document.getElementById("btnFinanceiro").addEventListener("click", () => switchView("financeiro"));
+
+    document.getElementById("tabLogin").addEventListener("click", () => {
+      document.getElementById("tabLogin").classList.add("active");
+      document.getElementById("tabRegister").classList.remove("active");
+      document.getElementById("loginForm").classList.remove("hidden");
+      document.getElementById("registerForm").classList.add("hidden");
+      clearAuthMessage();
+    });
+
+    document.getElementById("tabRegister").addEventListener("click", () => {
+      document.getElementById("tabRegister").classList.add("active");
+      document.getElementById("tabLogin").classList.remove("active");
+      document.getElementById("registerForm").classList.remove("hidden");
+      document.getElementById("loginForm").classList.add("hidden");
+      clearAuthMessage();
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthMessage();
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        showAuthMessage("Login realizado com sucesso.", "success");
+      } catch (error) {
+        showAuthMessage("Erro no login: " + (error.message || "não foi possível entrar."));
+      }
+    });
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthMessage();
+
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value;
+
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        showAuthMessage("Conta criada com sucesso.", "success");
+      } catch (error) {
+        showAuthMessage("Erro no cadastro: " + (error.message || "não foi possível criar a conta."));
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await auth.signOut();
+    });
+
+    async function runLoadingScreen() {
+      const screen = document.getElementById("loadingScreen");
+      const bar = document.getElementById("loadingBar");
+      const percent = document.getElementById("loadingPercent");
+      const status = document.getElementById("loadingStatus");
+      const welcome = document.getElementById("welcomeMessage");
+      const title = document.getElementById("loadingTitle");
+
+      const steps = [
+        { target: 18, text: "Sincronizando sistema..." },
+        { target: 36, text: "Carregando autenticação..." },
+        { target: 58, text: "Conectando ao banco..." },
+        { target: 79, text: "Preparando interface..." },
+        { target: 100, text: "Sistema pronto." }
+      ];
+
+      let current = 0;
+
+      for (const step of steps) {
+        status.textContent = step.text;
+        title.classList.toggle("glitch", step.target >= 79);
+
+        while (current < step.target) {
+          current++;
+          bar.style.width = current + "%";
+          percent.textContent = current + "%";
+          await new Promise(resolve => setTimeout(resolve, current < 85 ? 35 : 50));
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 350));
+      }
+
+      screen.classList.add("shake");
+      await new Promise(resolve => setTimeout(resolve, 420));
+      screen.classList.remove("shake");
+      title.classList.remove("glitch");
+      welcome.classList.add("show");
+      await new Promise(resolve => setTimeout(resolve, 1400));
+      screen.classList.add("hidden");
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      currentUser = user;
+
+      if (user) {
+        await loadUserData(user.uid);
+        await processDailyTasks();
+        render();
+        switchView("inicio");
+        document.getElementById("authScreen").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+      } else {
+        data = cloneData(defaultUserData);
+        document.getElementById("app").classList.add("hidden");
+        document.getElementById("authScreen").classList.remove("hidden");
+      }
+    });
+
+    runLoadingScreen().then(() => {
+      if (!currentUser) {
+        document.getElementById("authScreen").classList.remove("hidden");
+      }
+    });
+  </script>
 </body>
 </html>
